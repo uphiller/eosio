@@ -1,7 +1,7 @@
 # hello
 https://developers.eos.io/eosio-home/docs/your-first-contract
 
-##CMD
+## CMD
 ```
 #지갑생성
 ./cleos.sh wallet create --to-console
