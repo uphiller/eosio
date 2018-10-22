@@ -2,7 +2,7 @@
 https://developers.eos.io/eosio-home/docs/your-first-contract
 
 ##CMD
-`
+```
 //지갑생성
 ./cleos.sh wallet create --to-console
 
@@ -18,4 +18,4 @@ https://developers.eos.io/eosio-home/docs/your-first-contract
 //컨트랙트 빌드
 eosio-cpp -o ${contract}.wast ${contract}.cpp --abigen
 
-`
+```
