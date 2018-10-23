@@ -20,4 +20,7 @@
 #컨트랙트 빌드
 eosio-cpp -o ${contract}.wast ${contract}.cpp --abigen
 
+#컨트랙트배포
+./cleos.sh set contract <배포 account> <파일위치>
+
 ```
