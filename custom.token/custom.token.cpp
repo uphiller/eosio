@@ -14,7 +14,7 @@ namespace eosio {
 void token::create( name   issuer,
                     asset  maximum_supply )
 {
-    require_auth( _self ); // requires authorization of contract owner
+    require_auth( _self );
 
     auto sym = maximum_supply.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
@@ -30,13 +30,6 @@ void token::create( name   issuer,
        s.max_supply    = maximum_supply;
        s.issuer        = issuer;
     });
-
-	userstats stat(_self, _self.value);
-    stat.emplace(_self, [&](auto& p) {
-       p.account = issuer.value;
-       p.locked = false;
-    });
-
 }
 
 
@@ -45,12 +38,6 @@ void token::issue( name to, asset quantity, string memo )
     auto sym = quantity.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
     eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
-	
-	
-	//check locked
-	userstats stat(_self, _self.value);
-	auto p = stat.find(to.value);
-	eosio_assert( p->locked , "now is locked ");
 
     stats statstable( _self, sym.code().raw() );
     auto existing = statstable.find( sym.code().raw() );
@@ -110,13 +97,20 @@ void token::transfer( name    from,
     require_auth( from );
     eosio_assert( is_account( to ), "to account does not exist");
     
-	userstats stat(_self, _self.value);
-    auto p = stat.find(from.value);
-    eosio_assert( p->locked , "from: now is locked ");
-
-	userstats stat(_self, _self.value);
-    auto p = stat.find(to.value);
-    eosio_assert( p->locked , "to: now is locked ");
+    
+	userstats userstat(_self, _self.value);
+    
+	auto it1 = userstat.find( from.value );
+    if( it1 != userstat.end() ){
+       auto p1 = userstat.get(from.value);
+       eosio_assert( p1.locked == false , "from: now is locked "); 
+    }   
+    
+	auto it2 = userstat.find( to.value );
+    if( it2 != userstat.end() ){
+       auto p2 = userstat.get( to.value);
+       eosio_assert( p2.locked == false, "to: now is locked "); 
+    }   
 
     auto sym = quantity.symbol.code();
     stats statstable( _self, sym.raw() );
@@ -191,26 +185,55 @@ void token::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
-//custom action
+
 void token::lock( name user )
 {
     require_auth( _self );
-	userstats stat(_self, _self.value);
-    auto it = stat.find( user.value );
-    stat.modify(it, _self, [&](auto& p) {
-           p.account = user.value;
+    userstats userstat(_self, _self.value);
+    auto it = userstat.find( user.value );
+
+    if( it == userstat.end() ){
+
+        userstat.emplace(_self, [&](auto& p) {
+          p.key = user.value;
+          p.locked = true;
+        });
+
+    }
+    else{
+
+        userstat.modify(it, _self, [&](auto& p) {
+           p.key = user.value;
            p.locked = true;
-    });
+        });
+
+    }
 }
+
 
 void token::unlock( name user )
 {
-    userstats stat(_self, _self.value);
-	auto it = stat.find( user.value );
-	stat.modify(it, _self, [&](auto& p) {
-		   p.account = user.value;
-	       p.locked = false;
-	});		
+    require_auth( _self );
+    userstats userstat(_self, _self.value);
+    auto it = userstat.find( user.value );
+
+    if( it == userstat.end() ){
+
+        userstat.emplace(_self, [&](auto& p) {
+          p.key = user.value;
+          p.locked = false;
+        });
+
+    }
+    else{
+
+        userstat.modify(it, _self, [&](auto& p) {
+           p.key = user.value;
+           p.locked = false;
+        });
+
+    }
+
 }
 
 } /// namespace eosio

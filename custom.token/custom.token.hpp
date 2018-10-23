@@ -44,13 +44,14 @@ namespace eosio {
          void close( name owner, const symbol& symbol );
   
          [[eosio::action]]
-         void lock( name user);
+         void exchange( name  from, asset quantity, string  memo );
+
+         //custom action
+         [[eosio::action]]
+         void lock(name user);
 
          [[eosio::action]]
-         void unlock( name user);
-        
-         /*[[eosio::action]]
-         void burn( name user);*/
+         void unlock(name user);
 
          static asset get_supply( name token_contract_account, symbol_code sym_code )
          {
@@ -73,19 +74,22 @@ namespace eosio {
             uint64_t primary_key()const { return balance.symbol.code().raw(); }
          };
 
-         struct [[eosio::table]] userstat{
-               uint64_t account;
-               bool locked;
-               
-               uint64_t primary_key() const { return account; }
-         };
-
          struct [[eosio::table]] currency_stats {
             asset    supply;
             asset    max_supply;
             name     issuer;
 
             uint64_t primary_key()const { return supply.symbol.code().raw(); }
+         };
+         
+         //lock 정보 저장용 테이블
+         struct [[eosio::table]] userstat{
+               uint64_t key;
+               bool locked;
+    
+               uint64_t primary_key() const { return key; }
+			   
+			   EOSLIB_SERIALIZE( userstat , (key) (locked) );
          };
 
          struct transfer
@@ -97,9 +101,9 @@ namespace eosio {
 
             EOSLIB_SERIALIZE( transfer, (from)(to)(quantity)(memo) )
          };
-
+    
+	     typedef eosio::multi_index< "userstats"_n, userstat > userstats;
          typedef eosio::multi_index< "accounts"_n, account > accounts;
-         typedef eosio::multi_index< "userstats"_n, userstat > userstats;
          typedef eosio::multi_index< "stat"_n, currency_stats > stats;
 
          void sub_balance( name owner, asset value );
