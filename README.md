@@ -2,6 +2,9 @@
 
 ##cmd
 ```
+##지갑 생성
+./cleos.sh wallet create --to-console
+
 #계정 확인
 ./cleos.sh get account <계정명>
 
