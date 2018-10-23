@@ -3,7 +3,7 @@
  *  @copyright defined in eos/LICENSE.txt
  */
 
-#include "eosio.token.hpp"
+#include "custom.token.hpp"
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/asset.hpp>
 
@@ -14,7 +14,7 @@ namespace eosio {
 void token::create( name   issuer,
                     asset  maximum_supply )
 {
-    require_auth( _self );
+    require_auth( _self ); // requires authorization of contract owner
 
     auto sym = maximum_supply.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
@@ -167,6 +167,17 @@ void token::close( name owner, const symbol& symbol )
    eosio_assert( it != acnts.end(), "Balance row already deleted or never existed. Action won't have any effect." );
    eosio_assert( it->balance.amount == 0, "Cannot close because the balance is not zero." );
    acnts.erase( it );
+}
+
+//custom action
+void token::lock( name user)
+{
+    require_auth( _self );
+    userstats userstat(_self, _self.value);
+    userstat.emplace(_self, [&](auto &p) {
+            p.account = user.value;
+            p.locked = true;
+    });
 }
 
 } /// namespace eosio
