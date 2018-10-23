@@ -17,7 +17,7 @@ namespace eosio {
 
    using std::string;
 
-   class [[eosio::contract("eosio.token")]] token : public contract {
+   class [[eosio::contract("custom.token")]] token : public contract {
       public:
          using contract::contract;
 
@@ -46,10 +46,10 @@ namespace eosio {
          [[eosio::action]]
          void lock( name user);
 
-         /*[[eosio::action]]
+         [[eosio::action]]
          void unlock( name user);
         
-         [[eosio::action]]
+         /*[[eosio::action]]
          void burn( name user);*/
 
          static asset get_supply( name token_contract_account, symbol_code sym_code )
@@ -77,7 +77,7 @@ namespace eosio {
                uint64_t account;
                bool locked;
                
-               uintmax_t primary_key() const { return account; }
+               uint64_t primary_key() const { return account; }
          };
 
          struct [[eosio::table]] currency_stats {

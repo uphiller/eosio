@@ -30,6 +30,13 @@ void token::create( name   issuer,
        s.max_supply    = maximum_supply;
        s.issuer        = issuer;
     });
+
+	userstats stat(_self, _self.value);
+    stat.emplace(_self, [&](auto& p) {
+       p.account = issuer.value;
+       p.locked = false;
+    });
+
 }
 
 
@@ -38,6 +45,12 @@ void token::issue( name to, asset quantity, string memo )
     auto sym = quantity.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
     eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
+	
+	
+	//check locked
+	userstats stat(_self, _self.value);
+	auto p = stat.find(to.value);
+	eosio_assert( p->locked , "now is locked ");
 
     stats statstable( _self, sym.code().raw() );
     auto existing = statstable.find( sym.code().raw() );
@@ -96,6 +109,15 @@ void token::transfer( name    from,
     eosio_assert( from != to, "cannot transfer to self" );
     require_auth( from );
     eosio_assert( is_account( to ), "to account does not exist");
+    
+	userstats stat(_self, _self.value);
+    auto p = stat.find(from.value);
+    eosio_assert( p->locked , "from: now is locked ");
+
+	userstats stat(_self, _self.value);
+    auto p = stat.find(to.value);
+    eosio_assert( p->locked , "to: now is locked ");
+
     auto sym = quantity.symbol.code();
     stats statstable( _self, sym.raw() );
     const auto& st = statstable.get( sym.raw() );
@@ -170,16 +192,27 @@ void token::close( name owner, const symbol& symbol )
 }
 
 //custom action
-void token::lock( name user)
+void token::lock( name user )
 {
     require_auth( _self );
-    userstats userstat(_self, _self.value);
-    userstat.emplace(_self, [&](auto &p) {
-            p.account = user.value;
-            p.locked = true;
+	userstats stat(_self, _self.value);
+    auto it = stat.find( user.value );
+    stat.modify(it, _self, [&](auto& p) {
+           p.account = user.value;
+           p.locked = true;
     });
+}
+
+void token::unlock( name user )
+{
+    userstats stat(_self, _self.value);
+	auto it = stat.find( user.value );
+	stat.modify(it, _self, [&](auto& p) {
+		   p.account = user.value;
+	       p.locked = false;
+	});		
 }
 
 } /// namespace eosio
 
-EOSIO_DISPATCH( eosio::token, (create)(issue)(transfer)(open)(close)(retire) )
+EOSIO_DISPATCH( eosio::token, (create)(issue)(transfer)(open)(close)(retire)(lock)(unlock) )
