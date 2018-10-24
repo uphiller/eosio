@@ -15,7 +15,7 @@
 #잔액 확인
 ./cleos.sh get table <컨트랙트 계정> <계정> accounts
 
-#unlock
+#lock
 ./cleos.sh push action <컨트랙트 계정> lock '["계정"]' -p <계정 오너>@active
 
 #토큰 전송
